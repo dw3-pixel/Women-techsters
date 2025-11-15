@@ -1,0 +1,113 @@
+---
+title: "Mental Health Data cleaning"
+author: "Dorothy Worbie"
+output:
+  html_document: 
+    self_contained: true 
+    theme: cosmo         
+  pdf_document: null    
+fontsize: 11pt
+---
+
+```{r setup, include=FALSE}
+# Global options to display code, results, and figures
+# This ensures all subsequent code chunks show their output and code
+
+knitr::opts_chunk$set(echo = TRUE,      # Show the code
+                      eval = TRUE,      # Run the code
+                      results = 'markup', # Show the text output
+                      fig.align = 'center', # Center all plots
+                      fig.width = 8, 
+                      fig.height = 5)
+```
+
+
+
+# Load the necessary package for data manipulation
+
+```{r}
+
+library(tidyverse)
+library(readxl)
+
+# --- 1. View and Load the Dataset (assuming the dataset has already been imported into the R environment) ---
+
+Mental_health_dataset <- read_xlsx("/Users/D./Downloads/Mental_health_dataset.xlsx")
+df <- Mental_health_dataset
+
+```
+
+```{r}
+# --- 2. Data Validation and Initial Setup ---
+
+initial_rows <- nrow(df)
+MIN_STARTING_AGE <- 18
+
+print(initial_rows)
+
+# Ensure key columns are treated as numeric for the calculation
+df$Age <- as.numeric(df$Age)
+df$Years_At_Company <- as.numeric(df$Years_At_Company)
+
+view(df)
+
+```
+
+```{r}
+
+# --- 3. Apply Logical Filtering for Impossibility ---
+# RULE: Starting Age (Age - Years_At_Company) must be MIN_STARTING_AGE (18) or greater.international standard)
+
+df_cleaned <- df %>%
+  
+  # Filter out NA values that might affect
+  
+  filter(!is.na(Age) & !is.na(Years_At_Company)) %>%
+  
+  # Apply the core logical check based on the requirement
+  
+  filter(Age - Years_At_Company >= MIN_STARTING_AGE)
+
+nrow(df_cleaned)
+
+```
+
+
+```{r}
+
+# --- 4. Cleaning Summary and Output ---
+removed_rows <- initial_rows - nrow(df_cleaned)
+
+cat("--- Data Cleaning Summary: Logically Impossible Records Removed ---\n")
+cat(paste("Constraint Applied (Using Years_At_Company): Age - Years_At_Company >= ", MIN_STARTING_AGE, "\n"))
+cat(paste("Initial Total Records: ", initial_rows, "\n"))
+cat(paste("Records Removed (Illogical Entries): ", removed_rows, "\n"))
+cat(paste("Final Cleaned Records: ", nrow(df_cleaned), "\n"))
+
+cat("\n--- First 5 Rows of the Cleaned Data ---\n")
+print(head(df_cleaned))
+
+```
+
+# Now 'df_cleaned' is your primary dataframe for subsequent analysis in R.
+
+```{r}
+
+
+if (exists("df_cleaned") && nrow(df_cleaned) > 0) {
+  
+ # 1. Define the filename
+    filename <- "mental_health_cleaned.csv"
+
+    # 2. Use the write.csv function to save the dataframe.
+    # The 'row.names = FALSE' argument prevents R from writing the
+    # row numbers as the first column, which keeps the file clean.
+    write.csv(df_cleaned, file = filename, row.names = FALSE)
+
+    cat(paste("Successfully saved the cleaned data to:", filename, "\n"))
+    cat("You can now download this file from the file explorer on the left.\n")
+ } else {
+    cat("Error: The dataframe 'df_cleaned' does not exist or is empty. Cannot save the file.\n")
+}
+
+```
